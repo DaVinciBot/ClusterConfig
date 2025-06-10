@@ -5,8 +5,9 @@ let
   systemName = "dvbar";
   # IP address of the system
   systemIp = "192.168.0.10";
-  # Ngrok auto connect
-  ngrokAutoconnect = true;
+  kubeMasterIP = "192.168.0.10";
+  kubeMasterHostname = "api.kube";
+  kubeMasterAPIServerPort = 6443;
 in 
 {
   imports =
@@ -28,6 +29,9 @@ in
   } ];
   networking.defaultGateway = "192.168.0.1";
   networking.nameservers = ["8.8.8.8"];
+
+  networking.extraHosts = "${kubeMasterIP} ${kubeMasterHostname}";
+
 
   # Set your time zone.
   time.timeZone = "Europe/Paris";
@@ -86,6 +90,9 @@ in
     neofetch
     tmux
     wget
+    kompose
+    kubectl
+    kubernetes
     (blender.override {
         cudaSupport = true;
     })
@@ -200,5 +207,33 @@ in
     '';
   };
 
-  # Deploy RS config
+  # Kubernetes config
+  environment.variables.KUBECONFIG = "/etc/kubernetes/cluster-admin.kubeconfig";
+
+  services.kubernetes = {
+    roles = ["master" "node"];
+    masterAddress = kubeMasterHostname;
+    apiserverAddress = "https://${kubeMasterHostname}:${toString kubeMasterAPIServerPort}";
+    easyCerts = true;
+    apiserver = {
+      securePort = kubeMasterAPIServerPort;
+      advertiseAddress = kubeMasterIP;
+    };
+
+    # use coredns
+    addons.dns.enable = true;
+
+    # needed if you use swap
+    kubelet.extraOpts = "--fail-swap-on=false";
+  };
+
+  systemd.services.set-docker0-promisc = {
+    description = "Set docker0 interface in promiscuous mode";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "network-online.target" "docker.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "/run/current-system/sw/bin/ip link set docker0 promisc on";
+    };
+  };
 }
