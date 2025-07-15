@@ -49,9 +49,6 @@
           # Conditional modules based on server role
           (if isMaster then ./modules/k3s-master.nix else ./modules/k3s-node.nix)
           
-          # Add tunnel module only for master
-          (nixpkgs.lib.mkIf isMaster ./modules/tunnel.nix)
-          
           # Host-specific configuration with variables
           {
             networking.hostName = serverHostname;
@@ -66,7 +63,7 @@
           
           # Apply overlays
           { nixpkgs.overlays = overlays; }
-        ];
+        ] ++ (if isMaster then [ ./modules/tunnel.nix ] else []);
       };
       
     in {
