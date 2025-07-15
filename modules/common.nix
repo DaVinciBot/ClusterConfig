@@ -60,6 +60,7 @@
     wget
     screen
   ];
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
   # SSH configuration
   services.openssh = {
