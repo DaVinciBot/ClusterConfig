@@ -2,12 +2,11 @@
 
 let
   # Name of the system
-  systemName = "dvbar";
+  systemName = "dvbaguette";
   # IP address of the system
-  systemIp = "192.168.0.10";
+  systemIp = "192.168.0.12";
   kubeMasterIP = "192.168.0.10";
   kubeMasterHostname = "api.kube";
-  kubeMasterAPIServerPort = 6443;
 in 
 {
   imports =
@@ -90,9 +89,6 @@ in
     neofetch
     tmux
     wget
-    kompose
-    kubectl
-    kubernetes
     (blender.override {
         cudaSupport = true;
     })
@@ -207,33 +203,19 @@ in
     '';
   };
 
-  # Kubernetes config
-  environment.variables.KUBECONFIG = "/etc/kubernetes/cluster-admin.kubeconfig";
-
-  services.kubernetes = {
-    roles = ["master" "node"];
-    masterAddress = kubeMasterHostname;
-    apiserverAddress = "https://${kubeMasterHostname}:${toString kubeMasterAPIServerPort}";
-    easyCerts = true;
-    apiserver = {
-      securePort = kubeMasterAPIServerPort;
-      advertiseAddress = kubeMasterIP;
-    };
-
-    # use coredns
-    addons.dns.enable = true;
-
-    # needed if you use swap
-    kubelet.extraOpts = "--fail-swap-on=false";
-  };
-
-  systemd.services.set-docker0-promisc = {
-    description = "Set docker0 interface in promiscuous mode";
-    wantedBy = [ "multi-user.target" ];
-    after = [ "network-online.target" "docker.service" ];
-    serviceConfig = {
-      Type = "oneshot";
-      ExecStart = "/run/current-system/sw/bin/ip link set docker0 promisc on";
-    };
+  # K3s slave config
+  networking.firewall.allowedTCPPorts = [
+    6443 # k3s: required so that pods can reach the API server (running on port 6443 by default)
+    # 2379 # k3s, etcd clients: required if using a "High Availability Embedded etcd" configuration
+    # 2380 # k3s, etcd peers: required if using a "High Availability Embedded etcd" configuration
+  ];
+  networking.firewall.allowedUDPPorts = [
+    8472 # k3s, flannel: required if using multi-node for inter-node networking
+  ];
+  services.k3s = {
+    enable = true;
+    role = "agent";
+    token = "z7xT!ggBezQBroqM#XYi#!MCeR5YFRGJ";
+    serverAddr = "https://${kubeMasterIP}:6443";
   };
 }

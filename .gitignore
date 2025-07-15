@@ -1,0 +1,5 @@
+secrets.json
+secrets.nix
+*.lock
+result*
+hardware-configuration-*.nix

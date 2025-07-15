@@ -1,27 +1,100 @@
 {
-  description = "NixOS configuration for dvbar using flakes and deploy-rs";
+  description = "NixOS cluster configuration with K3s using flakes";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    deploy-rs.url = "github:serokell/deploy-rs";
-    # Optionally, add other inputs here (e.g., home-manager)
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+    
+    # Flake utilities
+    flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, deploy-rs, ... }@inputs: {
-    nixosConfigurations.dvbar = nixpkgs.lib.nixosSystem {
+  outputs = { self, nixpkgs, nixpkgs-unstable, flake-utils, ... }@inputs:
+    let
       system = "x86_64-linux";
-      modules = [
-        ./configuration.nix
+      
+      # Import secrets (will fall back to template if secrets.nix doesn't exist)
+      secrets = if builtins.pathExists ./secrets.nix 
+                then import ./secrets.nix 
+                else {
+                  k3sToken = "PLACEHOLDER_TOKEN_CHANGE_ME";
+                  tunnel = { id = "PLACEHOLDER"; secret = "PLACEHOLDER"; endpoint = "https://pangolin.davincibot.fr"; };
+                  sshKeys = { dvb = "PLACEHOLDER_SSH_KEY"; urbain = "PLACEHOLDER_SSH_KEY"; };
+                  userPasswords = { dvb = "PLACEHOLDER_PASSWORD_HASH"; };
+                };
+      
+      # Overlay to add unstable packages when needed
+      overlays = [
+        (final: prev: {
+          unstable = import nixpkgs-unstable {
+            inherit system;
+            config.allowUnfree = true;
+          };
+        })
       ];
+      
+      # Function to create a NixOS configuration for any server
+      mkServerConfig = { serverHostname, serverIP, isMaster ? false, masterIP ? "192.168.0.10" }: nixpkgs.lib.nixosSystem {
+        inherit system;
+        specialArgs = {
+          inherit inputs serverHostname serverIP isMaster masterIP secrets;
+          inherit (self) outputs;
+        };
+        modules = [
+          # Common modules for all servers
+          ./modules/common.nix
+          ./modules/server.nix
+          ./modules/nvidia.nix
+          
+          # Conditional modules based on server role
+          (if isMaster then ./modules/k3s-master.nix else ./modules/k3s-node.nix)
+          
+          # Add tunnel module only for master
+          (nixpkgs.lib.mkIf isMaster ./modules/tunnel.nix)
+          
+          # Host-specific configuration with variables
+          {
+            networking.hostName = serverHostname;
+            networking.interfaces.eno1.ipv4.addresses = [ {
+              address = serverIP;
+              prefixLength = 24;
+            } ];
+            
+            # Import hardware configuration
+            imports = [ ./hardware-configuration.nix ];
+          }
+          
+          # Apply overlays
+          { nixpkgs.overlays = overlays; }
+        ];
+      };
+      
+    in {
+      # NixOS configurations using the flexible function
+      nixosConfigurations = {
+        # Master node configuration
+        dvbar = mkServerConfig {
+          serverHostname = "dvbar";
+          serverIP = "192.168.0.10";
+          isMaster = true;
+          masterIP = "192.168.0.10";  # Self-reference for master
+        };
+        
+        # Worker node configuration
+        dvbaguette = mkServerConfig {
+          serverHostname = "dvbaguette";
+          serverIP = "192.168.0.12";
+          isMaster = false;
+          masterIP = "192.168.0.10";  # Points to dvbar
+        };
+        
+        # Example: Easy to add new servers
+        # newserver = mkServerConfig {
+        #   serverHostname = "newserver";
+        #   serverIP = "192.168.0.13";
+        #   isMaster = false;
+        #   masterIP = "192.168.0.10";  # Points to dvbar
+        # };
+      };
     };
-
-    # deploy.nodes.dvbar = {
-    #   hostname = "192.168.0.10"; # or your actual hostname
-    #   profiles.system = {
-    #     user = "dvb"; # the SSH user to deploy as
-    #     path = self.nixosConfigurations.dvbar.config.system.build.toplevel;
-    #   };
-    #   # Optionally, set sshOpts, magicRollback, etc.
-    # };
-  };
 }

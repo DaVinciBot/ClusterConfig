@@ -7,13 +7,16 @@ let
   systemIp = "192.168.0.10";
   kubeMasterIP = "192.168.0.10";
   kubeMasterHostname = "api.kube";
-  kubeMasterAPIServerPort = 6443;
 in 
 {
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
     ];
+
+  # secrets
+  # sops.defaultSopsFile = ./secrets.json;
+  # sops.defaultSopsFormat = "json";
 
   # Bootloader.
   boot.loader.systemd-boot.enable = true;
@@ -91,8 +94,14 @@ in
     tmux
     wget
     kompose
-    kubectl
-    kubernetes
+    (wrapHelm kubernetes-helm {
+        plugins = with pkgs.kubernetes-helmPlugins; [
+          helm-secrets
+          helm-diff
+          helm-s3
+          helm-git
+        ];
+      }) 
     (blender.override {
         cudaSupport = true;
     })
@@ -207,35 +216,41 @@ in
     '';
   };
 
-  # Kubernetes config
-  environment.variables.KUBECONFIG = "/etc/kubernetes/cluster-admin.kubeconfig";
+  environment.variables.KUBECONFIG = "/etc/rancher/k3s/k3s.yaml";
 
-  services.kubernetes = let
-    api = "https://${kubeMasterHostname}:${toString kubeMasterAPIServerPort}";
-  in
-  {
-    roles = ["node"];
-    masterAddress = kubeMasterHostname;
-    easyCerts = true;
-
-    # point kubelet and other services to kube-apiserver
-    kubelet.kubeconfig.server = api;
-    apiserverAddress = api;
-
-    # use coredns
-    addons.dns.enable = true;
-
-    # needed if you use swap
-    kubelet.extraOpts = "--fail-swap-on=false";
+ # K3s master config
+  networking.firewall.allowedTCPPorts = [
+    6443 # k3s: required so that pods can reach the API server (running on port 6443 by default)
+    # 2379 # k3s, etcd clients: required if using a "High Availability Embedded etcd" configuration
+    # 2380 # k3s, etcd peers: required if using a "High Availability Embedded etcd" configuration
+  ];
+  networking.firewall.allowedUDPPorts = [
+    8472 # k3s, flannel: required if using multi-node for inter-node networking
+  ];
+  services.k3s = {
+    enable = true;
+    role = "server";
+    clusterInit = true;
+    token = "z7xT!ggBezQBroqM#XYi#!MCeR5YFRGJ";
+    extraFlags = toString [
+      # "--node-ip" kubeMasterIP
+      # "--tls-san" kubeMasterHostname
+      # "--advertise-address" kubeMasterIP
+    ];
   };
 
-  systemd.services.set-docker0-promisc = {
-    description = "Set docker0 interface in promiscuous mode";
+  # launch tunnel on boot
+  systemd.services.launch = {
+    description = "Launch Tunnel Service";
     wantedBy = [ "multi-user.target" ];
-    after = [ "network-online.target" "docker.service" ];
+    after = [ "network.target" ];
     serviceConfig = {
       Type = "oneshot";
-      ExecStart = "/run/current-system/sw/bin/ip link set docker0 promisc on";
+      RemainAfterExit = true;
+      ExecStart = "${pkgs.writeShellScript "launch-script" ''
+        #!/bin/sh
+        /root/newt --id fyd7qp3uo9ld9hx --secret 9ufxsdupomzu0wthgu9qoq2ual94p8bql91g9leg9t2uabqw --endpoint https://pangolin.davincibot.fr
+      ''}";
     };
   };
 }
