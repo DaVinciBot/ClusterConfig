@@ -8,7 +8,7 @@
   # Networking base configuration
   networking.networkmanager.enable = true;
   networking.defaultGateway = "192.168.0.1";
-  networking.nameservers = ["8.8.8.8"];
+  networking.nameservers = ["8.8.8.8" "8.8.4.4"];
 
   # Locale and timezone
   time.timeZone = "Europe/Paris";

@@ -34,7 +34,7 @@
       ];
       
       # Function to create a NixOS configuration for any server
-      mkServerConfig = { serverHostname, serverIP, isMaster ? false, masterIP ? "192.168.0.10" }: nixpkgs.lib.nixosSystem {
+      mkServerConfig = { serverHostname, serverIP, isMaster ? null, masterIP ? null }: nixpkgs.lib.nixosSystem {
         inherit system;
         specialArgs = {
           inherit inputs serverHostname serverIP isMaster masterIP secrets;
@@ -45,9 +45,6 @@
           ./modules/common.nix
           ./modules/server.nix
           ./modules/nvidia.nix
-          
-          # Conditional modules based on server role
-          (if isMaster then ./modules/k3s-master.nix else ./modules/k3s-node.nix)
           
           # Host-specific configuration with variables
           {
@@ -63,35 +60,58 @@
           
           # Apply overlays
           { nixpkgs.overlays = overlays; }
-        ] ++ (if isMaster then [ ./modules/tunnel.nix ] else []);
+        ] ++ 
+        # Only include k3s modules if isMaster and masterIP are defined
+        (if isMaster != null && masterIP != null then [
+          # Conditional modules based on server role
+          (if isMaster then ./modules/k3s-master.nix else ./modules/k3s-node.nix)
+        ] else []) ++
+        # Only include tunnel module if isMaster is true
+        (if isMaster == true then [ ./modules/tunnel.nix ] else []);
       };
       
     in {
       # NixOS configurations using the flexible function
       nixosConfigurations = {
         # Master node configuration
-        dvbar = mkServerConfig {
-          serverHostname = "dvbar";
+        flo = mkServerConfig {
+          serverHostname = "flo";
           serverIP = "192.168.0.10";
           isMaster = true;
           masterIP = "192.168.0.10";  # Self-reference for master
         };
-        
-        # Worker node configuration
-        dvbaguette = mkServerConfig {
-          serverHostname = "dvbaguette";
+
+        # K3s Worker node configuration
+        rob = mkServerConfig {
+          serverHostname = "rob";
+          serverIP = "192.168.0.11";
+          isMaster = false;
+          masterIP = "192.168.0.10";  # Points to flo
+        };
+        bob = mkServerConfig {
+          serverHostname = "bob";
           serverIP = "192.168.0.12";
           isMaster = false;
-          masterIP = "192.168.0.10";  # Points to dvbar
+          masterIP = "192.168.0.10";  # Points to flo
         };
-        
-        # Example: Easy to add new servers
-        # newserver = mkServerConfig {
-        #   serverHostname = "newserver";
-        #   serverIP = "192.168.0.13";
-        #   isMaster = false;
-        #   masterIP = "192.168.0.10";  # Points to dvbar
-        # };
+
+        # Additional worker nodes / blender nodes
+        ping = mkServerConfig {
+          serverHostname = "ping";
+          serverIP = "192.168.0.13";
+        };
+        oogway = mkServerConfig {
+          serverHostname = "oogway";
+          serverIP = "192.168.0.14";
+        };
+        shifu = mkServerConfig {
+          serverHostname = "shifu";
+          serverIP = "192.168.0.15";
+        };
+        monkey = mkServerConfig {
+          serverHostname = "monkey";
+          serverIP = "192.168.0.16";
+        };
       };
     };
 }
