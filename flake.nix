@@ -13,17 +13,8 @@
     let
       system = "x86_64-linux";
       
-      # Import secrets (will fall back to template if secrets.nix doesn't exist)
-      secrets = let
-        secretsFile = ./secrets.nix;
-      in if builtins.pathExists secretsFile
-         then import secretsFile 
-         else builtins.trace "WARNING: secrets.nix not found, using placeholders" {
-           k3sToken = "PLACEHOLDER_TOKEN_CHANGE_ME";
-           tunnel = { id = "PLACEHOLDER"; secret = "PLACEHOLDER"; endpoint = "https://pangolin.davincibot.fr"; };
-           sshKeys = { dvb = "PLACEHOLDER_SSH_KEY"; urbain = "PLACEHOLDER_SSH_KEY"; };
-           userPasswords = { dvb = "$y$j9T$1fV/dZnmB7TL98xPEwdpC.$hcs2JmnYEX1sJibJ.uPSIiRN9Iuvl7YUFfpd2hOysqC"; }; # Valid locked password hash
-         };
+      # Import secrets directly (secrets.nix must exist)
+      secrets = import /etc/nixos/secrets.nix;
       
       # Overlay to add unstable packages when needed
       overlays = [
