@@ -34,10 +34,10 @@
       ];
       
       # Function to create a NixOS configuration for any server
-      mkServerConfig = { serverHostname, serverIP, isMaster ? null, masterIP ? null }: nixpkgs.lib.nixosSystem {
+      mkServerConfig = { serverHostname, serverIP, isMaster ? null, masterIP ? null, hddUUID }: nixpkgs.lib.nixosSystem {
         inherit system;
         specialArgs = {
-          inherit inputs serverHostname serverIP isMaster masterIP secrets;
+          inherit inputs serverHostname serverIP isMaster masterIP secrets hddUUID;
           inherit (self) outputs;
         };
         modules = [
