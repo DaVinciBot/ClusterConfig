@@ -78,25 +78,25 @@
         flo = mkServerConfig {
           serverHostname = "flo";
           serverIP = "192.168.0.10";
+          hddUUID = "9b28a06f-e9cc-485d-a8ba-d59a6f1c84d4";
           isMaster = true;
           masterIP = "192.168.0.10";  # Self-reference for master
-          hddUUID = "9b28a06f-e9cc-485d-a8ba-d59a6f1c84d4";
         };
 
         # K3s Worker node configuration
         rob = mkServerConfig {
           serverHostname = "rob";
           serverIP = "192.168.0.11";
+          hddUUID = "eb5fc298-4f97-4c37-87a1-79e57f532df5";
           isMaster = false;
           masterIP = "192.168.0.10";  # Points to flo
-          hddUUID = "eb5fc298-4f97-4c37-87a1-79e57f532df5";
         };
         bob = mkServerConfig {
           serverHostname = "bob";
           serverIP = "192.168.0.12";
+          hddUUID = "98c08844-c0a7-4b17-b0ed-380641462584";
           isMaster = false;
           masterIP = "192.168.0.10";  # Points to flo
-          hddUUID = "98c08844-c0a7-4b17-b0ed-380641462584";
         };
 
         # Additional worker nodes / blender nodes
