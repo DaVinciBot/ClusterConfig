@@ -14,8 +14,8 @@
       system = "x86_64-linux";
       
       # Import secrets (will fall back to template if secrets.nix doesn't exist)
-      secrets = if builtins.pathExists ./secrets.nix 
-                then import ./secrets.nix 
+      secrets = if builtins.pathExists /etc/nixos/secrets.nix 
+                then import /etc/nixos/secrets.nix 
                 else {
                   k3sToken = "PLACEHOLDER_TOKEN_CHANGE_ME";
                   tunnel = { id = "PLACEHOLDER"; secret = "PLACEHOLDER"; endpoint = "https://pangolin.davincibot.fr"; };
@@ -34,19 +34,19 @@
       ];
       
       # Function to create a NixOS configuration for any server
-      mkServerConfig = { serverHostname, serverIP, isMaster ? null, masterIP ? null, hddUUID }: nixpkgs.lib.nixosSystem {
+      mkServerConfig = { serverHostname, serverIP, hddUUID, isMaster ? null, masterIP ? null }: nixpkgs.lib.nixosSystem {
         inherit system;
         specialArgs = {
-          inherit inputs serverHostname serverIP isMaster masterIP secrets hddUUID;
+          inherit inputs serverHostname serverIP hddUUID isMaster masterIP secrets;
           inherit (self) outputs;
         };
         modules = [
           # Common modules for all servers
-          ./modules/common.nix
-          ./modules/server.nix
-          ./modules/nvidia.nix
-          ./modules/drives.nix
-          
+          /etc/nixos/modules/common.nix
+          /etc/nixos/modules/server.nix
+          /etc/nixos/modules/nvidia.nix
+          /etc/nixos/modules/drives.nix
+
           # Host-specific configuration with variables
           {
             networking.hostName = serverHostname;
@@ -55,8 +55,8 @@
               prefixLength = 24;
             } ];
             
-            # Import hardware configuration
-            imports = [ ./hardware-configuration.nix ];
+            # Import hardware configuration from /etc/nixos
+            imports = [ /etc/nixos/hardware-configuration.nix ];
           }
           
           # Apply overlays
@@ -65,10 +65,10 @@
         # Only include k3s modules if isMaster and masterIP are defined
         (if isMaster != null && masterIP != null then [
           # Conditional modules based on server role
-          (if isMaster then ./modules/k3s-master.nix else ./modules/k3s-node.nix)
+          (if isMaster then /etc/nixos/modules/k3s-master.nix else /etc/nixos/modules/k3s-node.nix)
         ] else []) ++
         # Only include tunnel module if isMaster is true
-        (if isMaster == true then [ ./modules/tunnel.nix ] else []);
+        (if isMaster == true then [ /etc/nixos/modules/tunnel.nix ] else []);
       };
       
     in {
