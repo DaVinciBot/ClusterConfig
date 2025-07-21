@@ -8,6 +8,11 @@ in
   # K3s master configuration
   
   environment.variables.KUBECONFIG = "/etc/rancher/k3s/k3s.yaml";
+  
+  # add alias for k3s kubectl
+  environment.shellAliases = {
+    k = "k3s kubectl";
+  };
 
   # Kubernetes packages
   environment.systemPackages = with pkgs; [

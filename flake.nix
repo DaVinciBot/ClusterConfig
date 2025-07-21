@@ -45,6 +45,7 @@
           ./modules/common.nix
           ./modules/server.nix
           ./modules/nvidia.nix
+          ./modules/drives.nix
           
           # Host-specific configuration with variables
           {
@@ -79,6 +80,7 @@
           serverIP = "192.168.0.10";
           isMaster = true;
           masterIP = "192.168.0.10";  # Self-reference for master
+          hddUUID = "9b28a06f-e9cc-485d-a8ba-d59a6f1c84d4";
         };
 
         # K3s Worker node configuration
@@ -87,30 +89,36 @@
           serverIP = "192.168.0.11";
           isMaster = false;
           masterIP = "192.168.0.10";  # Points to flo
+          hddUUID = "eb5fc298-4f97-4c37-87a1-79e57f532df5";
         };
         bob = mkServerConfig {
           serverHostname = "bob";
           serverIP = "192.168.0.12";
           isMaster = false;
           masterIP = "192.168.0.10";  # Points to flo
+          hddUUID = "98c08844-c0a7-4b17-b0ed-380641462584";
         };
 
         # Additional worker nodes / blender nodes
         ping = mkServerConfig {
           serverHostname = "ping";
           serverIP = "192.168.0.13";
+          hddUUID = "16222caa-fcee-4c0d-9eab-b6abb6a2350c";
         };
         oogway = mkServerConfig {
           serverHostname = "oogway";
           serverIP = "192.168.0.14";
+          hddUUID = "006342c8-3bb9-4b9f-8567-89e52a3c203b";
         };
         shifu = mkServerConfig {
           serverHostname = "shifu";
           serverIP = "192.168.0.15";
+          hddUUID = "438e198f-c884-4161-9e03-db1bd26ab957";
         };
         monkey = mkServerConfig {
           serverHostname = "monkey";
           serverIP = "192.168.0.16";
+          hddUUID = "5e1fdbfd-0f94-4278-9633-da651ad9e90c";
         };
       };
     };
