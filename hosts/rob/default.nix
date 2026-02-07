@@ -5,6 +5,8 @@
     ../../modules/services/docker.nix
     ../../modules/services/nvidia.nix
     ../../modules/services/k3s/node.nix
+    ../../modules/services/rustfs.nix
+    ../../modules/services/ntp.nix
   ];
 
   networking.hostName = "rob";

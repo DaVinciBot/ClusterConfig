@@ -8,9 +8,13 @@
     # Sops integration
     sops-nix.url = "github:Mic92/sops-nix";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
+
+    # RustFS object storage
+    rustfs.url = "github:rustfs/rustfs-flake";
+    rustfs.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, sops-nix, ... }@inputs:
+  outputs = { self, nixpkgs, nixpkgs-unstable, sops-nix, rustfs, ... }@inputs:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs { inherit system; };

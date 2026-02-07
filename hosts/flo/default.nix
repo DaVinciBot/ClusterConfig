@@ -6,6 +6,8 @@
     ../../modules/services/nvidia.nix
     ../../modules/services/tunnel.nix
     ../../modules/services/k3s/master.nix
+    ../../modules/services/rustfs.nix
+    ../../modules/services/ntp.nix
   ];
 
   networking.hostName = "flo";
