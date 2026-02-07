@@ -63,7 +63,8 @@ if [[ ! -f "$SOPS_AGE_KEY" ]]; then
     echo "Press Enter then Ctrl-D when done:"
     echo ""
 
-    KEY_CONTENT=$(cat)
+    # Read from /dev/tty so this works even when the script is piped (curl | bash)
+    KEY_CONTENT=$(cat < /dev/tty)
 
     if [[ -z "$KEY_CONTENT" ]]; then
         echo "[ERROR] No key provided. Aborting."
