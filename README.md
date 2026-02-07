@@ -19,18 +19,11 @@ All nodes share: NixOS 24.11, NVIDIA drivers, Zsh + Starship, hardened SSH, fail
 ## Quick start
 
 ```bash
-# 1. Enter the dev shell (provides sops, age, ssh-to-age)
-nix develop
+# 1. Enter sudo
+sudo -i
 
-# 2. Set up secrets (one-time)
-age-keygen -o ~/.config/sops/age/keys.txt   # if you don't have a key
-sops secrets/secrets.yaml                    # edit encrypted secrets
-
-# 3. Deploy a host
-sudo nixos-rebuild switch --flake .#flo
-
-# Or pull + rebuild locally via the helper script
-./update.sh -h flo
+# 2. Launch the update script (set correct hostname before)
+curl -sL https://raw.githubusercontent.com/DaVinciBot/ClusterConfig/refs/heads/main/update.sh | bash
 ```
 
 ## Adding a new host

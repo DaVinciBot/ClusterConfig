@@ -22,7 +22,7 @@ CLONE_DIR="/tmp/clusterconfig"
 TARGET_DIR="/etc/nixos"
 CURRENT_HOSTNAME=$(hostname)
 SOPS_AGE_KEY="/var/lib/sops-nix/key.txt"
-HW_CONFIG="/etc/nixos/hardware-configuration.nix"
+HW_CONFIG="${TARGET_DIR}/hardware-configuration.nix"
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -56,18 +56,36 @@ echo "[INFO] Using hostname: $CURRENT_HOSTNAME"
 
 # Ensure the sops age key is present (required for secret decryption)
 if [[ ! -f "$SOPS_AGE_KEY" ]]; then
-    echo "[ERROR] sops age key not found at $SOPS_AGE_KEY"
-    echo "        Deploy it from your admin machine with:"
-    echo "          ssh <host> 'sudo mkdir -p /var/lib/sops-nix && sudo tee /var/lib/sops-nix/key.txt' < key.txt"
-    echo "          ssh <host> 'sudo chmod 600 /var/lib/sops-nix/key.txt'"
-    exit 1
+    echo "[WARN] sops age key not found at $SOPS_AGE_KEY"
+    echo "        The age private key is required for sops-nix to decrypt secrets."
+    echo ""
+    echo "Paste your age private key below (starts with AGE-SECRET-KEY-1...)."
+    echo "Press Enter then Ctrl-D when done:"
+    echo ""
+
+    KEY_CONTENT=$(cat)
+
+    if [[ -z "$KEY_CONTENT" ]]; then
+        echo "[ERROR] No key provided. Aborting."
+        exit 1
+    fi
+
+    # Validate it looks like an age key
+    if ! echo "$KEY_CONTENT" | grep -q "^AGE-SECRET-KEY-1"; then
+        echo "[ERROR] Input does not look like a valid age private key (expected AGE-SECRET-KEY-1...)."
+        exit 1
+    fi
+
+    sudo mkdir -p "$(dirname "$SOPS_AGE_KEY")"
+    echo "$KEY_CONTENT" | sudo tee "$SOPS_AGE_KEY" > /dev/null
+    sudo chmod 600 "$SOPS_AGE_KEY"
+    echo "[INFO] Age key installed at $SOPS_AGE_KEY"
 fi
 
 # Generate hardware-configuration.nix if it doesn't exist yet
 if [[ ! -f "$HW_CONFIG" ]]; then
     echo "[INFO] hardware-configuration.nix not found — generating it now..."
-    sudo nixos-generate-config --show-hardware-config > /tmp/hw-config.nix
-    sudo mv /tmp/hw-config.nix "$HW_CONFIG"
+    sudo nixos-generate-config --show-hardware-config | sudo tee "$HW_CONFIG" > /dev/null
     echo "[INFO] Generated $HW_CONFIG"
 else
     echo "[INFO] hardware-configuration.nix already exists, skipping generation."
@@ -80,9 +98,21 @@ rm -rf "$CLONE_DIR"
 echo "[INFO] Cloning repository from $REPO_URL to $CLONE_DIR"
 git clone "$REPO_URL" "$CLONE_DIR"
 
-# Copy files to /etc/nixos, replacing existing files but preserving hw-config
+# Backup hardware-configuration.nix before overwriting the target dir
+if [[ -f "$HW_CONFIG" ]]; then
+    cp "$HW_CONFIG" /tmp/hw-config-backup.nix
+fi
+
+# Copy repo files into /etc/nixos
 echo "[INFO] Copying files from $CLONE_DIR to $TARGET_DIR"
 sudo cp -rT "$CLONE_DIR" "$TARGET_DIR"
+
+# Restore hardware-configuration.nix (the flake references it as ./hardware-configuration.nix)
+if [[ -f /tmp/hw-config-backup.nix ]]; then
+    sudo cp /tmp/hw-config-backup.nix "$HW_CONFIG"
+    rm -f /tmp/hw-config-backup.nix
+    echo "[INFO] Restored hardware-configuration.nix"
+fi
 
 # --- Rebuild ---
 
