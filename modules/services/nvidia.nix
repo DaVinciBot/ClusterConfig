@@ -6,7 +6,10 @@
   # Enable OpenGL
   hardware.graphics = {
     enable = true;
+    enable32Bit = true;
   };
+
+  hardware.nvidia-container-toolkit.enable = true;
 
   # Load nvidia driver for Xorg and Wayland
   services.xserver.videoDrivers = ["nvidia"];
@@ -44,6 +47,7 @@
   # Add CUDA toolkit and Blender with CUDA support to system packages
   environment.systemPackages = with pkgs; [
     cudatoolkit
+    nvidia-container-toolkit
     (blender.override {
       cudaSupport = true;
     })

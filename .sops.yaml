@@ -1,0 +1,12 @@
+keys:
+  - &urbain_key age1hnzc46wyme338ssyva3apgxf0ntx0tjrphce6re9wq736s8ny90qsxwjyv
+  - &dvb_admin_key age1vmxl3atskhe8qjujehm2sel77dc03ugrmxzvt9fkszal7as5mdxq8ev3w3
+  - &dvb_server_key age1yrdxlejsnm22vtng92yfn2fpj54cv0zfurg75pchy050yn2dvy3q34ggeg
+creation_rules:
+  - path_regex: secrets[\\/]secrets\.yaml$
+    key_groups:
+    - age:
+      - *urbain_key
+      - *dvb_admin_key
+      - *dvb_server_key
+

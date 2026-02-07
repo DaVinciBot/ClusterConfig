@@ -1,12 +1,12 @@
-{ config, pkgs, lib, serverIP, secrets, ... }:
+{ config, pkgs, lib, ... }:
 
-let
-  kubeMasterIP = serverIP;  # Use the passed serverIP as master IP
-  kubeMasterHostname = "api.kube";
-in
 {
+  imports = [ ./default.nix ];
+
   # K3s master configuration
   
+  sops.secrets.k3s_token = {};
+
   environment.variables.KUBECONFIG = "/etc/rancher/k3s/k3s.yaml";
   
   # add alias for k3s kubectl
@@ -24,11 +24,11 @@ in
           helm-s3
           helm-git
         ];
-      }) 
+      })
   ];
 
   # Network configuration for K3s
-  networking.extraHosts = "${kubeMasterIP} ${kubeMasterHostname}";
+  networking.extraHosts = "${config.cluster.masterIP} ${config.cluster.masterHostname}";
   
   # Firewall configuration for K3s master
   networking.firewall.allowedTCPPorts = [
@@ -37,7 +37,7 @@ in
     # 2380 # k3s, etcd peers: required if using a "High Availability Embedded etcd" configuration
   ];
   networking.firewall.allowedUDPPorts = [
-    8472 # k3s, flannel: required if using multi-node for inter-node networking
+    8472 # k3s, flannel: required if using multi-node for inter-node networking 
   ];
 
   # K3s service configuration
@@ -45,11 +45,11 @@ in
     enable = true;
     role = "server";
     clusterInit = true;
-    token = secrets.k3sToken;
+    tokenFile = config.sops.secrets.k3s_token.path;
     extraFlags = toString [
-      # "--node-ip" kubeMasterIP
-      # "--tls-san" kubeMasterHostname
-      # "--advertise-address" kubeMasterIP
+      # "--node-ip" config.cluster.masterIP
+      # "--tls-san" config.cluster.masterHostname
+      # "--advertise-address" config.cluster.masterIP
     ];
   };
 }
