@@ -114,6 +114,10 @@ if [[ -f /tmp/hw-config-backup.nix ]]; then
     echo "[INFO] Restored hardware-configuration.nix"
 fi
 
+# Flakes only see git-tracked files. hardware-configuration.nix is gitignored,
+# so we must force-add it for the flake to find it during evaluation.
+sudo git -C "$TARGET_DIR" add -f hardware-configuration.nix
+
 # --- Rebuild ---
 
 echo "[INFO] Rebuilding NixOS configuration for host: $CURRENT_HOSTNAME"
