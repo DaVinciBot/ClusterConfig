@@ -14,7 +14,7 @@ Declarative NixOS flake managing a 7-node bare-metal cluster with K3s orchestrat
 | shifu  | 192.168.0.15 | GPU compute | NVIDIA + CUDA               |
 | monkey | 192.168.0.16 | GPU compute | NVIDIA + CUDA               |
 
-All nodes share: NixOS 24.11, NVIDIA drivers, Zsh + Starship, hardened SSH, fail2ban, AppArmor, sops-nix secrets.
+All nodes share: NixOS 25.11, NVIDIA drivers, Zsh + Starship, hardened SSH, fail2ban, AppArmor, sops-nix secrets.
 
 ## Quick start
 
