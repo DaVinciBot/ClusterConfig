@@ -7,7 +7,7 @@
 
     # Sops integration
     sops-nix.url = "github:Mic92/sops-nix";
-    sops-nix.inputs.nixpkgs.follows = "nixpkgs";
+    sops-nix.inputs.nixpkgs.follows = "nixpkgs-unstable";
 
     # RustFS object storage
     rustfs.url = "github:rustfs/rustfs-flake";

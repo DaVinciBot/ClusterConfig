@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 
 {
   imports = [
@@ -15,7 +15,7 @@
     prefixLength = 24;
   } ];
 
-  fileSystems."/media/hdd1" = {
+  fileSystems."/media/hdd1" = lib.mkForce {
     device = "/dev/disk/by-uuid/98c08844-c0a7-4b17-b0ed-380641462584";
     fsType = "ext4";
     options = [ "defaults" "nofail" "x-systemd.automount" "x-systemd.device-timeout=10" ];
