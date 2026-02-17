@@ -55,6 +55,7 @@
         oogway = mkHost "oogway" [];
         shifu  = mkHost "shifu"  [];
         monkey = mkHost "monkey" [];
+        ker    = mkHost "ker"    [];
       };
 
       # Development shell with cluster management tools
