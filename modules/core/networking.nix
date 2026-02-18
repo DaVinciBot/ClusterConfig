@@ -5,5 +5,4 @@
   networking.networkmanager.enable = true;
   networking.defaultGateway = lib.mkDefault "192.168.0.1";
   networking.nameservers = ["8.8.8.8" "8.8.4.4"];
-
 }
