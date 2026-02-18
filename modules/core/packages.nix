@@ -27,5 +27,6 @@
     jq          # JSON processor (great for API debugging)
     zip
     unzip
+    net-tools   # ifconfig, netstat
   ];
 }
