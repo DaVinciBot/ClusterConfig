@@ -24,14 +24,15 @@ in {
       wantedBy = [ "multi-user.target" ];
       after = [ "network.target" ];
       serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
+        Type = "simple";
+        Restart = "always";
+        RestartSec = "5s";
         ExecStart = "${pkgs.writeShellScript "launch-script" ''
           #!/bin/sh
           ID=$(cat ${config.sops.secrets."${cfg.secretName}/id".path})
           SECRET=$(cat ${config.sops.secrets."${cfg.secretName}/secret".path})
           ENDPOINT=$(cat ${config.sops.secrets."${cfg.secretName}/endpoint".path})
-          /root/newt --id "$ID" --secret "$SECRET" --endpoint "$ENDPOINT"
+          exec ${pkgs.fosrl-newt}/bin/newt --id "$ID" --secret "$SECRET" --endpoint "$ENDPOINT"
         ''}";
       };
     };
