@@ -20,4 +20,5 @@
     fsType = "ext4";
     options = [ "defaults" "nofail" "x-systemd.automount" "x-systemd.device-timeout=10" ];
   };
+  # other hdd : 16222caa-fcee-4c0d-9eab-b6abb6a2350c
 }
