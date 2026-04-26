@@ -32,7 +32,7 @@ in {
           ID=$(cat ${config.sops.secrets."${cfg.secretName}/id".path})
           SECRET=$(cat ${config.sops.secrets."${cfg.secretName}/secret".path})
           ENDPOINT=$(cat ${config.sops.secrets."${cfg.secretName}/endpoint".path})
-          exec ${pkgs.fosrl-newt}/bin/newt --id "$ID" --secret "$SECRET" --endpoint "$ENDPOINT"
+          exec ${pkgs.unstable.fosrl-newt}/bin/newt --id "$ID" --secret "$SECRET" --endpoint "$ENDPOINT"
         ''}";
       };
     };
